@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -8,12 +9,11 @@ export function AuthCallbackPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
-  const checkEmailVerification = useAuthStore((state) => state.checkEmailVerification)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { error } = await supabase.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession()
         if (error) throw error
 
         const type = searchParams.get('type')
@@ -21,18 +21,20 @@ export function AuthCallbackPage() {
           // Handle password reset
           const accessToken = searchParams.get('access_token')
           if (accessToken) {
-            // Store the access token for password reset
-            localStorage.setItem('supabase.auth.token', accessToken)
             navigate('/auth/update-password')
           }
         } else {
-          // Handle email verification
-          const isVerified = await checkEmailVerification()
-          if (isVerified) {
-            toast.success('Email verified successfully')
+          // Handle successful authentication
+          if (session?.user) {
+            useAuthStore.setState({ 
+              user: session.user, 
+              session,
+              loading: false 
+            })
+            toast.success('Successfully authenticated')
             navigate('/dashboard')
           } else {
-            toast.error('Email verification failed')
+            toast.error('Authentication failed')
             navigate('/login')
           }
         }
@@ -46,7 +48,7 @@ export function AuthCallbackPage() {
     }
 
     handleAuthCallback()
-  }, [searchParams, navigate, checkEmailVerification])
+  }, [searchParams, navigate])
 
   if (isLoading) {
     return (
@@ -60,4 +62,4 @@ export function AuthCallbackPage() {
   }
 
   return null
-} 
+}
