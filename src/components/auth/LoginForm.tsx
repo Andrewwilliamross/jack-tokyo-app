@@ -58,12 +58,12 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-foreground">Admin Password</Label>
+        <Label htmlFor="password" className="text-foreground">Jack-san: (Current Level)</Label>
         <Input
           id="password"
           type="password"
-          placeholder="Enter admin password"
-          className="bg-background border-border"
+          placeholder="Password"
+          className="bg-background border-border placeholder:text-neon-pink placeholder:font-thin"
           {...register('password')}
         />
         {errors.password && (
