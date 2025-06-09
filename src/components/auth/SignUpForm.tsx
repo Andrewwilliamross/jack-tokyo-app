@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../lib/store/auth'
-import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { toast } from 'sonner'
@@ -38,11 +37,21 @@ export function SignUpForm() {
     try {
       setIsLoading(true)
       await signUp(data.email, data.password)
-      toast.success('Account created successfully! Please check your email to verify your account.')
+      toast.success('Account created successfully! You can now sign in.')
       navigate('/login')
     } catch (error: any) {
       console.error('Sign up error:', error)
-      toast.error(error.message || 'Failed to create account')
+      
+      // Handle specific error messages
+      if (error.message?.includes('User already registered')) {
+        toast.error('An account with this email already exists. Please sign in instead.')
+      } else if (error.message?.includes('Invalid email')) {
+        toast.error('Please enter a valid email address.')
+      } else if (error.message?.includes('Password')) {
+        toast.error('Password must be at least 6 characters long.')
+      } else {
+        toast.error('Failed to create account. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

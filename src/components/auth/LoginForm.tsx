@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../lib/store/auth'
-import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { toast } from 'sonner'
@@ -38,7 +37,17 @@ export function LoginForm() {
       navigate('/')
     } catch (error: any) {
       console.error('Login error:', error)
-      toast.error(error.message || 'Failed to log in')
+      
+      // Handle specific error messages
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please check your credentials and try again.')
+      } else if (error.message?.includes('Email not confirmed')) {
+        toast.error('Please check your email and click the confirmation link before signing in.')
+      } else if (error.message?.includes('Too many requests')) {
+        toast.error('Too many login attempts. Please wait a moment and try again.')
+      } else {
+        toast.error('Failed to log in. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

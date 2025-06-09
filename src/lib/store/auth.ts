@@ -1,3 +1,4 @@
+
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../supabase'
@@ -28,8 +29,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password,
       })
       if (error) throw error
+      
       set({ user: data.user, session: data.session })
-      await get().checkEmailVerification()
+      
+      // Only check email verification if we have a user
+      if (data.user) {
+        await get().checkEmailVerification()
+      }
     } catch (error) {
       console.error('Error signing in:', error)
       throw error
@@ -46,8 +52,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       })
       if (error) throw error
+      
       set({ user: data.user, session: data.session })
-      await get().checkEmailVerification()
+      
+      // Don't check email verification immediately for new signups
+      // The user will need to verify their email first
     } catch (error) {
       console.error('Error signing up:', error)
       throw error
@@ -68,7 +77,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   resetPassword: async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       })
       if (error) throw error
     } catch (error) {
@@ -93,11 +102,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error) throw error
-      set({ isEmailVerified: user?.email_confirmed_at !== null })
-      return user?.email_confirmed_at !== null
+      
+      const isVerified = user?.email_confirmed_at !== null
+      set({ isEmailVerified: isVerified })
+      return isVerified
     } catch (error) {
       console.error('Error checking email verification:', error)
+      set({ isEmailVerified: false })
       return false
     }
   },
-})) 
+}))
