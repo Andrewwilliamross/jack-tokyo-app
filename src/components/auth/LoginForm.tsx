@@ -38,12 +38,17 @@ export function LoginForm() {
       console.error('Login error:', error)
       
       // Handle specific error messages
-      if (error.message?.includes('Invalid login credentials')) {
+      if (error.message?.includes('Invalid login credentials') || error.message?.includes('Invalid')) {
         toast.error('Invalid password. Please try again.')
       } else if (error.message?.includes('Too many requests')) {
         toast.error('Too many login attempts. Please wait a moment and try again.')
+      } else if (error.message?.includes('Email not confirmed')) {
+        toast.error('Please check your email and confirm your account first.')
+      } else if (error.message?.includes('User not found')) {
+        toast.error('Admin account not found. Please create an account first.')
+        setTimeout(() => navigate('/signup'), 2000)
       } else {
-        toast.error('Failed to log in. Please try again.')
+        toast.error('Failed to log in. Please check your password and try again.')
       }
     } finally {
       setIsLoading(false)
@@ -73,6 +78,12 @@ export function LoginForm() {
       >
         {isLoading ? 'Signing in...' : 'Sign in'}
       </button>
+
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground">
+          Having trouble? The admin account might need to be created first.
+        </p>
+      </div>
     </form>
   )
 }

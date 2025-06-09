@@ -1,30 +1,23 @@
 
-import { useState } from 'react'
-import { useAuthStore } from '../../lib/store/auth'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../ui/button'
-import { toast } from 'sonner'
 
 interface EmailVerificationProps {
   email: string
 }
 
 export function EmailVerification({ email }: EmailVerificationProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const signUp = useAuthStore((state) => state.signUp)
+  const navigate = useNavigate()
 
-  const handleResendVerification = async () => {
-    try {
-      setIsLoading(true)
-      // Since we're now using password-only auth, we can't resend verification
-      // This component is no longer needed with our simplified auth system
-      toast.error('Email verification is not available with password-only authentication')
-    } catch (error) {
-      toast.error('Failed to send verification email')
-      console.error(error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Auto-redirect to login after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate('/login')
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [navigate])
 
   return (
     <div className="text-center space-y-4">
@@ -33,13 +26,16 @@ export function EmailVerification({ email }: EmailVerificationProps) {
         <p className="text-sm text-gray-600">
           Your admin account has been created successfully. You can now sign in with your password.
         </p>
+        <p className="text-xs text-gray-500">
+          Redirecting to login in 3 seconds...
+        </p>
       </div>
       <Button
-        onClick={() => window.location.href = '/login'}
+        onClick={() => navigate('/login')}
         variant="outline"
       >
-        Go to Login
+        Go to Login Now
       </Button>
     </div>
   )
-} 
+}

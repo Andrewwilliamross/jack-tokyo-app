@@ -36,18 +36,23 @@ export function SignUpForm() {
     try {
       setIsLoading(true)
       await signUp(data.password)
-      toast.success('Admin account created successfully! You can now sign in.')
-      navigate('/login')
+      toast.success('Admin account created successfully!')
+      navigate('/dashboard')
     } catch (error: any) {
       console.error('Sign up error:', error)
       
       // Handle specific error messages
-      if (error.message?.includes('User already registered')) {
+      if (error.message?.includes('User already registered') || error.message?.includes('already registered')) {
         toast.error('Admin account already exists. Please sign in instead.')
+        navigate('/login')
       } else if (error.message?.includes('Password')) {
         toast.error('Password must be at least 6 characters long.')
+      } else if (error.message?.includes('Invalid')) {
+        toast.error('Please check your password and try again.')
       } else {
-        toast.error('Failed to create admin account. Please try again.')
+        toast.error('Failed to create admin account. The account may already exist - try signing in instead.')
+        // Auto-redirect to login if signup fails
+        setTimeout(() => navigate('/login'), 2000)
       }
     } finally {
       setIsLoading(false)
@@ -91,6 +96,12 @@ export function SignUpForm() {
       >
         {isLoading ? 'Creating admin account...' : 'Create admin account'}
       </button>
+
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground">
+          If the account already exists, you'll be redirected to sign in.
+        </p>
+      </div>
     </form>
   )
 }

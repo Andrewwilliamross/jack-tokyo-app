@@ -1,6 +1,7 @@
 
 import { Link } from 'react-router-dom'
 import { LoginForm } from '../../components/auth/LoginForm'
+import { DevAuthBypass } from '../../components/auth/DevAuthBypass'
 
 export function LoginPage() {
   return (
@@ -12,6 +13,7 @@ export function LoginPage() {
             <h2 className="text-3xl font-bold neon-glow">Meicho Shimbun RPG</h2>
           </div>
           <LoginForm />
+          <DevAuthBypass />
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{' '}

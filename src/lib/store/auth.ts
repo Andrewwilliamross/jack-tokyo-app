@@ -7,13 +7,11 @@ interface AuthState {
   user: User | null
   session: any | null
   loading: boolean
-  isEmailVerified: boolean
   signIn: (password: string) => Promise<void>
   signUp: (password: string) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
-  checkEmailVerification: () => Promise<boolean>
 }
 
 // Admin account configuration
@@ -23,7 +21,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   loading: true,
-  isEmailVerified: false,
 
   signIn: async (password: string) => {
     try {
@@ -34,11 +31,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error
       
       set({ user: data.user, session: data.session })
-      
-      // Only check email verification if we have a user
-      if (data.user) {
-        await get().checkEmailVerification()
-      }
     } catch (error) {
       console.error('Error signing in:', error)
       throw error
@@ -50,16 +42,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data, error } = await supabase.auth.signUp({
         email: ADMIN_EMAIL,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
       })
       if (error) throw error
       
       set({ user: data.user, session: data.session })
-      
-      // Don't check email verification immediately for new signups
-      // The user will need to verify their email first
     } catch (error) {
       console.error('Error signing up:', error)
       throw error
@@ -70,7 +56,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
-      set({ user: null, session: null, isEmailVerified: false })
+      set({ user: null, session: null })
     } catch (error) {
       console.error('Error signing out:', error)
       throw error
@@ -98,21 +84,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error('Error updating password:', error)
       throw error
-    }
-  },
-
-  checkEmailVerification: async () => {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error) throw error
-      
-      const isVerified = user?.email_confirmed_at !== null
-      set({ isEmailVerified: isVerified })
-      return isVerified
-    } catch (error) {
-      console.error('Error checking email verification:', error)
-      set({ isEmailVerified: false })
-      return false
     }
   },
 }))
