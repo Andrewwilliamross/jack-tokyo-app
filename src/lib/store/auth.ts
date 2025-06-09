@@ -24,12 +24,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (password: string) => {
     try {
+      console.log('Attempting to sign in with email:', ADMIN_EMAIL)
       const { data, error } = await supabase.auth.signInWithPassword({
         email: ADMIN_EMAIL,
         password,
       })
-      if (error) throw error
+      if (error) {
+        console.error('Sign in error:', error)
+        throw error
+      }
       
+      console.log('Sign in successful:', data)
       set({ user: data.user, session: data.session })
     } catch (error) {
       console.error('Error signing in:', error)
@@ -39,12 +44,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signUp: async (password: string) => {
     try {
+      console.log('Attempting to create admin account with email:', ADMIN_EMAIL)
+      
+      // First check if user already exists
+      const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers()
+      if (!listError && existingUsers?.users?.some(user => user.email === ADMIN_EMAIL)) {
+        throw new Error('User already registered')
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: ADMIN_EMAIL,
         password,
+        options: {
+          emailRedirectTo: undefined, // Disable email confirmation
+        }
       })
-      if (error) throw error
       
+      if (error) {
+        console.error('Sign up error:', error)
+        throw error
+      }
+      
+      console.log('Sign up successful:', data)
       set({ user: data.user, session: data.session })
     } catch (error) {
       console.error('Error signing up:', error)

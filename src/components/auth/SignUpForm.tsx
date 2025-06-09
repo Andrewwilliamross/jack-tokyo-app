@@ -35,6 +35,7 @@ export function SignUpForm() {
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setIsLoading(true)
+      console.log('Creating admin account...')
       await signUp(data.password)
       toast.success('Admin account created successfully!')
       navigate('/dashboard')
@@ -44,15 +45,17 @@ export function SignUpForm() {
       // Handle specific error messages
       if (error.message?.includes('User already registered') || error.message?.includes('already registered')) {
         toast.error('Admin account already exists. Please sign in instead.')
-        navigate('/login')
+        setTimeout(() => navigate('/login'), 1500)
       } else if (error.message?.includes('Password')) {
         toast.error('Password must be at least 6 characters long.')
       } else if (error.message?.includes('Invalid')) {
         toast.error('Please check your password and try again.')
+      } else if (error.message?.includes('Email not confirmed')) {
+        // Auto-redirect to login if account was created but needs confirmation
+        toast.success('Account created! Please sign in.')
+        setTimeout(() => navigate('/login'), 1500)
       } else {
-        toast.error('Failed to create admin account. The account may already exist - try signing in instead.')
-        // Auto-redirect to login if signup fails
-        setTimeout(() => navigate('/login'), 2000)
+        toast.error('Failed to create admin account. Please try again.')
       }
     } finally {
       setIsLoading(false)
@@ -99,7 +102,7 @@ export function SignUpForm() {
 
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          If the account already exists, you'll be redirected to sign in.
+          This will create the main admin account for the system.
         </p>
       </div>
     </form>
