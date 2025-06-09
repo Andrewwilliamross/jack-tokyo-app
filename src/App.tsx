@@ -19,8 +19,6 @@ import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './lib/store/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "./components/AppSidebar";
 
 const queryClient = new QueryClient();
 
@@ -57,60 +55,19 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 const AppContent = () => {
   const location = useLocation();
-  const { user } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/reset-password', '/auth/update-password', '/auth/callback'].includes(location.pathname);
-  const isDashboard = location.pathname === '/dashboard';
-
-  if (isAuthPage) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        </Routes>
-      </div>
-    );
-  }
-
-  if (user && isDashboard) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <SidebarInset>
-            <div className="flex flex-col min-h-screen">
-              <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-                <SidebarTrigger className="-ml-1" />
-                <div className="flex-1" />
-              </header>
-              <div className="flex-1 p-4">
-                <Routes>
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <MissionControl />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </div>
-            </div>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
-      <TokyoPromoBar />
-      <Header />
+      {!isAuthPage && <TokyoPromoBar />}
+      {!isAuthPage && <Header />}
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route
           path="/dashboard"
           element={
