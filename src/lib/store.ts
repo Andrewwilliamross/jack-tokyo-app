@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { listEntries, getEntry } from '@/supabase/utils/entries';
 
 export interface MediaFile {
   id: string;
@@ -32,9 +33,8 @@ interface EntryStore {
     expiresAt: string;
     completed: boolean;
   } | null;
-  addEntry: (entry: Omit<Entry, 'id' | 'createdAt'>) => void;
-  updateEntry: (id: string, entry: Partial<Entry>) => void;
-  deleteEntry: (id: string) => void;
+  setEntries: (entries: Entry[]) => void;
+  loadEntries: () => Promise<void>;
   setCurrentEntry: (entry: Entry | null) => void;
   calculateStreak: () => void;
   setCurrentPrompt: (prompt: string) => void;
@@ -98,36 +98,28 @@ export const useEntryStore = create<EntryStore>()(
       currentEntry: null,
       streakDays: 0,
       currentPrompt: null,
-      addEntry: (entry) => {
-        const newEntry = {
-          ...entry,
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-        };
-        set((state) => ({
-          entries: [newEntry, ...state.entries],
-          streakDays: calculateStreakFromEntries([newEntry, ...state.entries]),
+      setEntries: (entries) => set({ entries }),
+      loadEntries: async () => {
+        const { entries: dbEntries } = await listEntries();
+        // Map Supabase entries to Zustand Entry type
+        const entries = dbEntries.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          description: e.description ?? '',
+          researchNotes: e.research_notes ?? '',
+          location: e.location_id ?? '',
+          streetAddress: '', // You may want to resolve this if you store it
+          tags: e.tags ? e.tags.map((t: any) => t.tag?.name ?? '') : [],
+          mediaFiles: e.media ? e.media.map((m: any) => ({
+            id: m.id,
+            url: m.storage_path, // You may want to use getMediaUrl here
+            type: m.media_type,
+          })) : [],
+          createdAt: e.created_at,
+          updatedAt: e.updated_at,
+          previewMediaId: e.media ? (e.media.find((m: any) => m.is_preview)?.id ?? null) : null,
         }));
-      },
-      updateEntry: (id, updatedEntry) => {
-        set((state) => {
-          const updatedEntries = state.entries.map((entry) =>
-            entry.id === id ? { ...entry, ...updatedEntry } : entry
-          );
-          return {
-            entries: updatedEntries,
-            streakDays: calculateStreakFromEntries(updatedEntries),
-          };
-        });
-      },
-      deleteEntry: (id) => {
-        set((state) => {
-          const updatedEntries = state.entries.filter((entry) => entry.id !== id);
-          return {
-            entries: updatedEntries,
-            streakDays: calculateStreakFromEntries(updatedEntries),
-          };
-        });
+        set({ entries });
       },
       setCurrentEntry: (entry) => {
         set({ currentEntry: entry });
@@ -143,7 +135,6 @@ export const useEntryStore = create<EntryStore>()(
         const tokyoTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
         const expiresAt = new Date(tokyoTime);
         expiresAt.setHours(24, 0, 0, 0);
-        
         set({
           currentPrompt: {
             text: prompt,

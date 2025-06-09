@@ -8,6 +8,9 @@ import { Camera, Plus, Loader2, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { LocationField } from './LocationField';
+import { createEntry, getEntry } from '@/supabase/utils/entries';
+import { uploadMedia } from '@/supabase/utils/media';
+import { supabase } from '@/supabase/config/client';
 
 interface PromptOfTheDayModalProps {
   isOpen: boolean;
@@ -27,7 +30,7 @@ export const PromptOfTheDayModal: React.FC<PromptOfTheDayModalProps> = ({
   onClose,
   prompt
 }) => {
-  const { addEntry, completePrompt } = useEntryStore();
+  const { completePrompt } = useEntryStore();
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -170,23 +173,32 @@ export const PromptOfTheDayModal: React.FC<PromptOfTheDayModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const entryData = {
+      // Get current user
+      const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null;
+      if (!user) {
+        toast.error('You must be logged in to submit an entry.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 1. Create entry in Supabase
+      const entry = await createEntry({
         title: prompt,
         description,
-        location,
-        tags,
-        mediaFiles: mediaFiles.map(file => ({
-          id: file.id,
-          url: file.url,
-          type: file.type
-        })),
-        previewMediaId: selectedPreviewId,
-        researchNotes: '',
-        updatedAt: new Date().toISOString(),
-        promptText: prompt
-      };
+        research_notes: '',
+        location_id: null, // You may want to resolve location_id from location string if needed
+        status: 'draft',
+      }, user.id);
 
-      addEntry(entryData);
+      // 2. Upload media files
+      for (const fileObj of mediaFiles) {
+        await uploadMedia(entry.id, fileObj.file, fileObj.id === selectedPreviewId);
+      }
+
+      // 3. Fetch the full entry with media
+      const fullEntry = await getEntry(entry.id);
+
+      // Optionally update local state/UI here if needed
       completePrompt();
       toast.success('Entry created successfully!');
       handleClose();

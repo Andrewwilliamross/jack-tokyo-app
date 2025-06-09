@@ -7,6 +7,9 @@ import { useEntryStore, MediaFile as StoreMediaFile } from '@/lib/store';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { createEntry, updateEntry as updateEntryDb, getEntry } from '@/supabase/utils/entries';
+import { uploadMedia } from '@/supabase/utils/media';
+import { supabase } from '@/supabase/config/client';
 
 interface TicketModalProps {
   isOpen: boolean;
@@ -154,30 +157,44 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editi
     setIsSubmitting(true);
 
     try {
-      const entryData = {
-        title,
-        description,
-        researchNotes,
-        location,
-        streetAddress,
-        tags,
-        mediaFiles: mediaFiles.map(file => ({
-          id: file.id,
-          url: file.url,
-          type: file.type
-        })),
-        previewMediaId: selectedPreviewId,
-        updatedAt: new Date().toISOString()
-      };
-
-      if (editingEntryId) {
-        updateEntry(editingEntryId, entryData);
-        toast.success('Entry updated successfully!');
-      } else {
-        addEntry(entryData);
-        toast.success('Entry created successfully!');
+      // Get current user
+      const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null;
+      if (!user) {
+        toast.error('You must be logged in to submit an entry.');
+        setIsSubmitting(false);
+        return;
       }
 
+      let entry;
+      if (editingEntryId) {
+        // Update entry in Supabase
+        entry = await updateEntryDb(editingEntryId, {
+          title,
+          description,
+          research_notes: researchNotes,
+          location_id: null, // You may want to resolve location_id from location string if needed
+          status: 'draft',
+        }, user.id);
+      } else {
+        // Create entry in Supabase
+        entry = await createEntry({
+          title,
+          description,
+          research_notes: researchNotes,
+          location_id: null, // You may want to resolve location_id from location string if needed
+          status: 'draft',
+        }, user.id);
+      }
+
+      // Upload media files
+      for (const fileObj of mediaFiles) {
+        await uploadMedia(entry.id, fileObj.file, fileObj.id === selectedPreviewId);
+      }
+
+      // Fetch the full entry with media
+      const fullEntry = await getEntry(entry.id);
+
+      toast.success(`Entry ${editingEntryId ? 'updated' : 'created'} successfully!`);
       handleClose();
     } catch (error) {
       console.error('Error saving entry:', error);
