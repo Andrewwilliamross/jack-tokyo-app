@@ -10,6 +10,7 @@ import { Label } from '../ui/label'
 import { toast } from 'sonner'
 
 const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -31,7 +32,7 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
-      await signIn(data.password)
+      await signIn(data.email, data.password)
       toast.success('Successfully logged in')
       navigate('/dashboard')
     } catch (error: any) {
@@ -39,16 +40,16 @@ export function LoginForm() {
       
       // Handle specific error messages
       if (error.message?.includes('Invalid login credentials') || error.message?.includes('Invalid')) {
-        toast.error('Invalid password. Please try again.')
+        toast.error('Invalid email or password. Please try again.')
       } else if (error.message?.includes('Too many requests')) {
         toast.error('Too many login attempts. Please wait a moment and try again.')
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error('Please check your email and confirm your account first.')
       } else if (error.message?.includes('User not found')) {
-        toast.error('Admin account not found. Please create an account first.')
+        toast.error('Account not found. Please create an account first.')
         setTimeout(() => navigate('/signup'), 2000)
       } else {
-        toast.error('Failed to log in. Please check your password and try again.')
+        toast.error('Failed to log in. Please check your credentials and try again.')
       }
     } finally {
       setIsLoading(false)
@@ -58,12 +59,26 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-foreground">Jack-san: (Current Level)</Label>
+        <Label htmlFor="email" className="text-foreground">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="Enter your email"
+          className="bg-background border-border"
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-foreground">Password</Label>
         <Input
           id="password"
           type="password"
-          placeholder="Password"
-          className="bg-background border-border placeholder:text-neon-pink placeholder:font-thin"
+          placeholder="Enter your password"
+          className="bg-background border-border"
           {...register('password')}
         />
         {errors.password && (
@@ -81,7 +96,7 @@ export function LoginForm() {
 
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          Having trouble? The admin account might need to be created first.
+          Enter your email and password to sign in.
         </p>
       </div>
     </form>

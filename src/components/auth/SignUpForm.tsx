@@ -10,6 +10,7 @@ import { Label } from '../ui/label'
 import { toast } from 'sonner'
 
 const signUpSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -35,27 +36,26 @@ export function SignUpForm() {
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setIsLoading(true)
-      console.log('Creating admin account...')
-      await signUp(data.password)
-      toast.success('Admin account created successfully!')
+      console.log('Creating account for:', data.email)
+      await signUp(data.email, data.password)
+      toast.success('Account created successfully!')
       navigate('/dashboard')
     } catch (error: any) {
       console.error('Sign up error:', error)
       
       // Handle specific error messages
-      if (error.message?.includes('User already registered') || error.message?.includes('already registered')) {
-        toast.error('Admin account already exists. Please sign in instead.')
+      if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+        toast.error('This email is already registered. Please sign in instead.')
         setTimeout(() => navigate('/login'), 1500)
       } else if (error.message?.includes('Password')) {
         toast.error('Password must be at least 6 characters long.')
       } else if (error.message?.includes('Invalid')) {
-        toast.error('Please check your password and try again.')
+        toast.error('Please check your email and password and try again.')
       } else if (error.message?.includes('Email not confirmed')) {
-        // Auto-redirect to login if account was created but needs confirmation
         toast.success('Account created! Please sign in.')
         setTimeout(() => navigate('/login'), 1500)
       } else {
-        toast.error('Failed to create admin account. Please try again.')
+        toast.error('Failed to create account. Please try again.')
       }
     } finally {
       setIsLoading(false)
@@ -65,11 +65,25 @@ export function SignUpForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-foreground">Admin Password</Label>
+        <Label htmlFor="email" className="text-foreground">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="Enter your email"
+          className="bg-background border-border"
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-foreground">Password</Label>
         <Input
           id="password"
           type="password"
-          placeholder="Create admin password"
+          placeholder="Create password"
           className="bg-background border-border"
           {...register('password')}
         />
@@ -83,7 +97,7 @@ export function SignUpForm() {
         <Input
           id="confirmPassword"
           type="password"
-          placeholder="Confirm admin password"
+          placeholder="Confirm password"
           className="bg-background border-border"
           {...register('confirmPassword')}
         />
@@ -97,12 +111,12 @@ export function SignUpForm() {
         disabled={isLoading}
         className="w-full run-button text-white py-3 px-4 rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? 'Creating admin account...' : 'Create admin account'}
+        {isLoading ? 'Creating account...' : 'Create account'}
       </button>
 
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          This will create the main admin account for the system.
+          Sign up with any email to get started.
         </p>
       </div>
     </form>

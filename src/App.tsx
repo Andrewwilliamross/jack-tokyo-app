@@ -18,7 +18,7 @@ import { UpdatePasswordPage } from './pages/auth/UpdatePasswordPage';
 import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useAuthStore } from './lib/store/auth';
-import { supabase } from './lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
 

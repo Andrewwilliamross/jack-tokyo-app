@@ -1,33 +1,32 @@
+
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
-import { supabase } from '../supabase'
+import { supabase } from '@/integrations/supabase/client'
 
 interface AuthState {
   user: User | null
   session: any | null
   loading: boolean
-  signIn: (password: string) => Promise<void>
-  signUp: (password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
 }
-
-// Admin account configuration
-const ADMIN_EMAIL = 'admin@meicho.com'
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   loading: true,
 
-  signIn: async (password: string) => {
+  signIn: async (email: string, password: string) => {
     try {
-      console.log('Attempting to sign in with email:', ADMIN_EMAIL)
+      console.log('Attempting to sign in with email:', email)
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: ADMIN_EMAIL,
+        email,
         password,
       })
+      
       if (error) {
         console.error('Sign in error:', error)
         throw error
@@ -41,12 +40,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signUp: async (password: string) => {
+  signUp: async (email: string, password: string) => {
     try {
-      console.log('Attempting to create admin account with email:', ADMIN_EMAIL)
+      console.log('Attempting to create account with email:', email)
       
       const { data, error } = await supabase.auth.signUp({
-        email: ADMIN_EMAIL,
+        email,
         password,
         options: {
           emailRedirectTo: undefined, // Disable email confirmation
@@ -55,10 +54,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) {
         console.error('Sign up error:', error)
-        // Handle user already exists error specifically
-        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
-          throw new Error('User already registered')
-        }
         throw error
       }
       
