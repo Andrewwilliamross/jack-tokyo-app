@@ -36,27 +36,34 @@ export function SignUpForm() {
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setIsLoading(true)
-      console.log('Creating account for:', data.email)
+      console.log('🚀 Form submitted, creating account for:', data.email)
+      
       await signUp(data.email, data.password)
-      toast.success('Account created successfully!')
+      
+      toast.success('Account created successfully! Welcome!')
+      console.log('🎉 Signup complete, redirecting to dashboard')
       navigate('/dashboard')
     } catch (error: any) {
-      console.error('Sign up error:', error)
+      console.error('❌ Signup failed:', error)
       
-      // Handle specific error messages
-      if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
-        toast.error('This email is already registered. Please sign in instead.')
-        setTimeout(() => navigate('/login'), 1500)
-      } else if (error.message?.includes('Password')) {
-        toast.error('Password must be at least 6 characters long.')
-      } else if (error.message?.includes('Invalid')) {
-        toast.error('Please check your email and password and try again.')
-      } else if (error.message?.includes('Email not confirmed')) {
-        toast.success('Account created! Please sign in.')
-        setTimeout(() => navigate('/login'), 1500)
-      } else {
-        toast.error('Failed to create account. Please try again.')
+      let errorMessage = 'Failed to create account. Please try again.'
+      
+      if (error.message) {
+        if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+          errorMessage = 'This email is already registered. Please sign in instead.'
+          setTimeout(() => navigate('/login'), 2000)
+        } else if (error.message.includes('Password should be at least')) {
+          errorMessage = 'Password must be at least 6 characters long.'
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = 'Please enter a valid email address.'
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = 'Too many requests. Please wait a moment and try again.'
+        } else {
+          errorMessage = `Error: ${error.message}`
+        }
       }
+      
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -83,7 +90,7 @@ export function SignUpForm() {
         <Input
           id="password"
           type="password"
-          placeholder="Create password"
+          placeholder="Create password (min 6 characters)"
           className="bg-background border-border"
           {...register('password')}
         />
@@ -116,7 +123,7 @@ export function SignUpForm() {
 
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          Sign up with any email to get started.
+          Create your account to get started with Meicho Shimbun RPG.
         </p>
       </div>
     </form>
