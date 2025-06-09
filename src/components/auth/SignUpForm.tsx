@@ -40,7 +40,7 @@ export function SignUpForm() {
       
       await signUp(data.email, data.password)
       
-      toast.success('Account created successfully! Welcome!')
+      toast.success('Account created successfully! Welcome to Meicho Shimbun RPG!')
       console.log('🎉 Signup complete, redirecting to dashboard')
       navigate('/dashboard')
     } catch (error: any) {
@@ -58,8 +58,10 @@ export function SignUpForm() {
           errorMessage = 'Please enter a valid email address.'
         } else if (error.message.includes('rate limit')) {
           errorMessage = 'Too many requests. Please wait a moment and try again.'
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and confirm your account.'
         } else {
-          errorMessage = `Error: ${error.message}`
+          errorMessage = `Signup error: ${error.message}`
         }
       }
       

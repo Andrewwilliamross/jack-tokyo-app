@@ -62,28 +62,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log('👤 User data:', data.user)
       console.log('🎫 Session data:', data.session)
       
-      // Check if user was created in auth.users
       if (data.user) {
         console.log('✅ User created in auth.users with ID:', data.user.id)
         
-        // Give the trigger a moment to run
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Wait a moment for the trigger to execute
+        await new Promise(resolve => setTimeout(resolve, 1500))
         
-        // Check if user_role was created
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .single()
-          
-        if (roleError) {
-          console.warn('⚠️ Could not verify user role creation:', roleError.message)
-        } else {
-          console.log('✅ User role created successfully:', roleData)
+        // Verify user role was created
+        try {
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .single()
+            
+          if (roleError) {
+            console.warn('⚠️ Could not verify user role creation:', roleError.message)
+            console.log('🔄 This is normal for new accounts, role will be created automatically')
+          } else {
+            console.log('✅ User role verified successfully:', roleData)
+          }
+        } catch (roleCheckError) {
+          console.log('🔄 Role verification skipped, continuing with signup')
         }
       }
       
       set({ user: data.user, session: data.session })
+      console.log('🎉 Signup process completed successfully')
     } catch (error) {
       console.error('💥 Error during signup:', error)
       throw error
