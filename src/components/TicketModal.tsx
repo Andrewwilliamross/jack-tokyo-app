@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { createEntry, updateEntry as updateEntryDb, getEntry } from '@/supabase/utils/entries';
 import { uploadMedia } from '@/supabase/utils/media';
 import { supabase } from '@/supabase/config/client';
+import { useAuthStore } from '@/lib/store/auth';
+import { useNavigate } from 'react-router-dom';
 
 interface TicketModalProps {
   isOpen: boolean;
@@ -25,7 +28,9 @@ interface MediaFile {
 }
 
 export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editingEntryId }) => {
-  const { entries, addEntry, updateEntry, setCurrentEntry } = useEntryStore();
+  const { entries, addEntry, updateEntry, setCurrentEntry, loadEntries } = useEntryStore();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -36,6 +41,15 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editi
   const [tags, setTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Check authentication when modal opens
+  useEffect(() => {
+    if (isOpen && !user) {
+      toast.error('You must be logged in to create entries');
+      onClose();
+      navigate('/login');
+    }
+  }, [isOpen, user, onClose, navigate]);
 
   // Load entry data if editing
   useEffect(() => {
@@ -149,6 +163,12 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editi
   };
 
   const handleSave = async () => {
+    if (!user) {
+      toast.error('You must be logged in to save entries');
+      navigate('/login');
+      return;
+    }
+
     if (!validateForm()) {
       toast.error('Please fill in all required fields');
       return;
@@ -157,14 +177,6 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editi
     setIsSubmitting(true);
 
     try {
-      // Get current user
-      const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null;
-      if (!user) {
-        toast.error('You must be logged in to submit an entry.');
-        setIsSubmitting(false);
-        return;
-      }
-
       let entry;
       if (editingEntryId) {
         // Update entry in Supabase
@@ -188,11 +200,13 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editi
 
       // Upload media files
       for (const fileObj of mediaFiles) {
-        await uploadMedia(entry.id, fileObj.file, fileObj.id === selectedPreviewId);
+        if (fileObj.file.size > 0) { // Only upload actual files
+          await uploadMedia(entry.id, fileObj.file, fileObj.id === selectedPreviewId);
+        }
       }
 
-      // Fetch the full entry with media
-      const fullEntry = await getEntry(entry.id);
+      // Reload entries to get updated data
+      await loadEntries();
 
       toast.success(`Entry ${editingEntryId ? 'updated' : 'created'} successfully!`);
       handleClose();

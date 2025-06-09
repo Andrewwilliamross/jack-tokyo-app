@@ -1,6 +1,7 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { listEntries, getEntry } from '@/supabase/utils/entries';
+import { listEntries, getEntry, createEntry, updateEntry as updateEntryDb, deleteEntry as deleteEntryDb } from '@/supabase/utils/entries';
 
 export interface MediaFile {
   id: string;
@@ -35,6 +36,9 @@ interface EntryStore {
   } | null;
   setEntries: (entries: Entry[]) => void;
   loadEntries: () => Promise<void>;
+  addEntry: (entry: Entry) => void;
+  updateEntry: (entryId: string, updatedEntry: Partial<Entry>) => void;
+  deleteEntry: (entryId: string) => Promise<void>;
   setCurrentEntry: (entry: Entry | null) => void;
   calculateStreak: () => void;
   setCurrentPrompt: (prompt: string) => void;
@@ -100,26 +104,61 @@ export const useEntryStore = create<EntryStore>()(
       currentPrompt: null,
       setEntries: (entries) => set({ entries }),
       loadEntries: async () => {
-        const { entries: dbEntries } = await listEntries();
-        // Map Supabase entries to Zustand Entry type
-        const entries = dbEntries.map((e: any) => ({
-          id: e.id,
-          title: e.title,
-          description: e.description ?? '',
-          researchNotes: e.research_notes ?? '',
-          location: e.location_id ?? '',
-          streetAddress: '', // You may want to resolve this if you store it
-          tags: e.tags ? e.tags.map((t: any) => t.tag?.name ?? '') : [],
-          mediaFiles: e.media ? e.media.map((m: any) => ({
-            id: m.id,
-            url: m.storage_path, // You may want to use getMediaUrl here
-            type: m.media_type,
-          })) : [],
-          createdAt: e.created_at,
-          updatedAt: e.updated_at,
-          previewMediaId: e.media ? (e.media.find((m: any) => m.is_preview)?.id ?? null) : null,
+        try {
+          const { entries: dbEntries } = await listEntries();
+          // Map Supabase entries to Zustand Entry type
+          const entries = dbEntries.map((e: any) => ({
+            id: e.id,
+            title: e.title,
+            description: e.description ?? '',
+            researchNotes: e.research_notes ?? '',
+            location: e.location_id ?? '',
+            streetAddress: '', // You may want to resolve this if you store it
+            tags: e.tags ? e.tags.map((t: any) => t.tag?.name ?? '') : [],
+            mediaFiles: e.media ? e.media.map((m: any) => ({
+              id: m.id,
+              url: m.storage_path, // You may want to use getMediaUrl here
+              type: m.media_type,
+            })) : [],
+            createdAt: e.created_at,
+            updatedAt: e.updated_at,
+            previewMediaId: e.media ? (e.media.find((m: any) => m.is_preview)?.id ?? null) : null,
+          }));
+          set({ entries });
+          get().calculateStreak();
+        } catch (error) {
+          console.error('Error loading entries:', error);
+        }
+      },
+      addEntry: (entry) => {
+        set((state) => ({
+          entries: [entry, ...state.entries]
         }));
-        set({ entries });
+        get().calculateStreak();
+      },
+      updateEntry: (entryId, updatedEntry) => {
+        set((state) => ({
+          entries: state.entries.map(entry =>
+            entry.id === entryId ? { ...entry, ...updatedEntry } : entry
+          )
+        }));
+      },
+      deleteEntry: async (entryId) => {
+        try {
+          // Get current user
+          const { supabase } = await import('@/supabase/config/client');
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('User not authenticated');
+
+          await deleteEntryDb(entryId, user.id);
+          set((state) => ({
+            entries: state.entries.filter(entry => entry.id !== entryId)
+          }));
+          get().calculateStreak();
+        } catch (error) {
+          console.error('Error deleting entry:', error);
+          throw error;
+        }
       },
       setCurrentEntry: (entry) => {
         set({ currentEntry: entry });
@@ -156,4 +195,4 @@ export const useEntryStore = create<EntryStore>()(
       name: 'meicho-entries',
     }
   )
-); 
+);

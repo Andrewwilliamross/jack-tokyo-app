@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { MissionControl } from './components/MissionControl';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
@@ -16,59 +17,94 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { UpdatePasswordPage } from './pages/auth/UpdatePasswordPage';
 import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { useAuthStore } from './lib/store/auth';
+import { supabase } from './lib/supabase';
 
 const queryClient = new QueryClient();
+
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user, session, loading } = useAuthStore();
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        useAuthStore.setState({ 
+          user: session?.user ?? null, 
+          session,
+          loading: false
+        });
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      useAuthStore.setState({ 
+        user: session?.user ?? null, 
+        session,
+        loading: false
+      });
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return <>{children}</>;
+};
 
 const App = () => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: 'hsl(220 25% 8%)',
-              color: '#fff',
-              border: '1px solid hsl(220 25% 15%)',
-            },
-            success: {
-              iconTheme: {
-                primary: 'hsl(320 100% 65%)',
-                secondary: '#fff',
+        <AuthProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: 'hsl(220 25% 8%)',
+                color: '#fff',
+                border: '1px solid hsl(220 25% 15%)',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: 'hsl(0 100% 65%)',
-                secondary: '#fff',
+              success: {
+                iconTheme: {
+                  primary: 'hsl(320 100% 65%)',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-        <Sonner />
-        <div className="min-h-screen bg-background">
-          <TokyoPromoBar />
-          <Header />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <MissionControl />
-                </ProtectedRoute>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
+              error: {
+                iconTheme: {
+                  primary: 'hsl(0 100% 65%)',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+          <Sonner />
+          <div className="min-h-screen bg-background">
+            <TokyoPromoBar />
+            <Header />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <MissionControl />
+                  </ProtectedRoute>
+                }
+              />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </BrowserRouter>

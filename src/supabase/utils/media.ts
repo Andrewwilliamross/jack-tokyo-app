@@ -1,4 +1,5 @@
-import { supabase, STORAGE_BUCKETS, MEDIA_CONFIG, getMediaStoragePath } from '../config/client'
+
+import { supabase, STORAGE_BUCKETS, MEDIA_CONFIG, getMediaStoragePath, validateMediaFile } from '../config/client'
 import { Database } from '../types/database.types'
 
 type Media = Database['public']['Tables']['media']['Row']
@@ -101,7 +102,7 @@ const getFileMetadata = async (file: File): Promise<{
   duration?: number
 }> => {
   return new Promise((resolve, reject) => {
-    if (MEDIA_CONFIG.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    if (MEDIA_CONFIG.ALLOWED_IMAGE_TYPES.includes(file.type as any)) {
       const img = new Image()
       img.onload = () => {
         resolve({
@@ -112,7 +113,7 @@ const getFileMetadata = async (file: File): Promise<{
       }
       img.onerror = () => reject(new Error('Failed to load image'))
       img.src = URL.createObjectURL(file)
-    } else if (MEDIA_CONFIG.ALLOWED_VIDEO_TYPES.includes(file.type)) {
+    } else if (MEDIA_CONFIG.ALLOWED_VIDEO_TYPES.includes(file.type as any)) {
       const video = document.createElement('video')
       video.onloadedmetadata = () => {
         resolve({
@@ -128,4 +129,4 @@ const getFileMetadata = async (file: File): Promise<{
       reject(new Error('Unsupported file type'))
     }
   })
-} 
+}
