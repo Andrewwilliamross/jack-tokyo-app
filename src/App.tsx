@@ -10,6 +10,12 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { TokyoPromoBar } from "./components/TokyoPromoBar";
 import Header from "./components/Header";
+import { LoginPage } from './pages/auth/LoginPage';
+import { SignUpPage } from './pages/auth/SignUpPage';
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { UpdatePasswordPage } from './pages/auth/UpdatePasswordPage';
+import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 const queryClient = new QueryClient();
 
@@ -46,6 +52,19 @@ const App = () => (
           <Header />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MissionControl />
+                </ProtectedRoute>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
