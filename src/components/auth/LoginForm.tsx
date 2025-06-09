@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,46 +35,52 @@ export function LoginForm() {
       setIsLoading(true)
       await signIn(data.email, data.password)
       toast.success('Successfully logged in')
-      navigate('/dashboard')
-    } catch (error) {
-      toast.error('Failed to log in')
-      console.error(error)
+      navigate('/')
+    } catch (error: any) {
+      console.error('Login error:', error)
+      toast.error(error.message || 'Failed to log in')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-foreground">Email</Label>
         <Input
           id="email"
           type="email"
           placeholder="Enter your email"
+          className="bg-background border-border"
           {...register('email')}
         />
         {errors.email && (
-          <p className="text-sm text-red-500">{errors.email.message}</p>
+          <p className="text-sm text-destructive">{errors.email.message}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className="text-foreground">Password</Label>
         <Input
           id="password"
           type="password"
           placeholder="Enter your password"
+          className="bg-background border-border"
           {...register('password')}
         />
         {errors.password && (
-          <p className="text-sm text-red-500">{errors.password.message}</p>
+          <p className="text-sm text-destructive">{errors.password.message}</p>
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <button 
+        type="submit" 
+        disabled={isLoading}
+        className="w-full run-button text-white py-3 px-4 rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         {isLoading ? 'Signing in...' : 'Sign in'}
-      </Button>
+      </button>
     </form>
   )
-} 
+}

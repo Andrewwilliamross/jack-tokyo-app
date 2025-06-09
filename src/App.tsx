@@ -6,7 +6,7 @@ import './App.css';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { TokyoPromoBar } from "./components/TokyoPromoBar";
@@ -53,6 +53,36 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppContent = () => {
+  const location = useLocation();
+  const isAuthPage = ['/login', '/signup', '/reset-password', '/auth/update-password', '/auth/callback'].includes(location.pathname);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {!isAuthPage && <TokyoPromoBar />}
+      {!isAuthPage && <Header />}
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <MissionControl />
+            </ProtectedRoute>
+          }
+        />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+};
+
 const App = () => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
@@ -82,28 +112,7 @@ const App = () => (
             }}
           />
           <Sonner />
-          <div className="min-h-screen bg-background">
-            <TokyoPromoBar />
-            <Header />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignUpPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/auth/update-password" element={<UpdatePasswordPage />} />
-              <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <MissionControl />
-                  </ProtectedRoute>
-                }
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
+          <AppContent />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
