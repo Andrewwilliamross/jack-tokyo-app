@@ -10,8 +10,7 @@ import { Label } from '../ui/label'
 import { toast } from 'sonner'
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(1, 'Password is required'),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -32,17 +31,15 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
-      await signIn(data.email, data.password)
+      await signIn(data.password)
       toast.success('Successfully logged in')
-      navigate('/')
+      navigate('/dashboard')
     } catch (error: any) {
       console.error('Login error:', error)
       
       // Handle specific error messages
       if (error.message?.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password. Please check your credentials and try again.')
-      } else if (error.message?.includes('Email not confirmed')) {
-        toast.error('Please check your email and click the confirmation link before signing in.')
+        toast.error('Invalid password. Please try again.')
       } else if (error.message?.includes('Too many requests')) {
         toast.error('Too many login attempts. Please wait a moment and try again.')
       } else {
@@ -56,25 +53,11 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-foreground">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="Enter your email"
-          className="bg-background border-border"
-          {...register('email')}
-        />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password" className="text-foreground">Password</Label>
+        <Label htmlFor="password" className="text-foreground">Admin Password</Label>
         <Input
           id="password"
           type="password"
-          placeholder="Enter your password"
+          placeholder="Enter admin password"
           className="bg-background border-border"
           {...register('password')}
         />

@@ -8,13 +8,16 @@ interface AuthState {
   session: any | null
   loading: boolean
   isEmailVerified: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
+  signIn: (password: string) => Promise<void>
+  signUp: (password: string) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
   checkEmailVerification: () => Promise<boolean>
 }
+
+// Admin account configuration
+const ADMIN_EMAIL = 'admin@meicho.com'
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -22,10 +25,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   isEmailVerified: false,
 
-  signIn: async (email: string, password: string) => {
+  signIn: async (password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: ADMIN_EMAIL,
         password,
       })
       if (error) throw error
@@ -42,10 +45,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signUp: async (email: string, password: string) => {
+  signUp: async (password: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: ADMIN_EMAIL,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,

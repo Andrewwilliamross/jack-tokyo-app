@@ -10,7 +10,6 @@ import { Label } from '../ui/label'
 import { toast } from 'sonner'
 
 const signUpSchema = z.object({
-  email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -36,21 +35,19 @@ export function SignUpForm() {
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setIsLoading(true)
-      await signUp(data.email, data.password)
-      toast.success('Account created successfully! You can now sign in.')
+      await signUp(data.password)
+      toast.success('Admin account created successfully! You can now sign in.')
       navigate('/login')
     } catch (error: any) {
       console.error('Sign up error:', error)
       
       // Handle specific error messages
       if (error.message?.includes('User already registered')) {
-        toast.error('An account with this email already exists. Please sign in instead.')
-      } else if (error.message?.includes('Invalid email')) {
-        toast.error('Please enter a valid email address.')
+        toast.error('Admin account already exists. Please sign in instead.')
       } else if (error.message?.includes('Password')) {
         toast.error('Password must be at least 6 characters long.')
       } else {
-        toast.error('Failed to create account. Please try again.')
+        toast.error('Failed to create admin account. Please try again.')
       }
     } finally {
       setIsLoading(false)
@@ -60,25 +57,11 @@ export function SignUpForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-foreground">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="Enter your email"
-          className="bg-background border-border"
-          {...register('email')}
-        />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password" className="text-foreground">Password</Label>
+        <Label htmlFor="password" className="text-foreground">Admin Password</Label>
         <Input
           id="password"
           type="password"
-          placeholder="Enter your password"
+          placeholder="Create admin password"
           className="bg-background border-border"
           {...register('password')}
         />
@@ -92,7 +75,7 @@ export function SignUpForm() {
         <Input
           id="confirmPassword"
           type="password"
-          placeholder="Confirm your password"
+          placeholder="Confirm admin password"
           className="bg-background border-border"
           {...register('confirmPassword')}
         />
@@ -106,7 +89,7 @@ export function SignUpForm() {
         disabled={isLoading}
         className="w-full run-button text-white py-3 px-4 rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? 'Creating account...' : 'Create account'}
+        {isLoading ? 'Creating admin account...' : 'Create admin account'}
       </button>
     </form>
   )
