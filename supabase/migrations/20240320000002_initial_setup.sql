@@ -1,3 +1,31 @@
+
+-- Create user_roles table first
+CREATE TYPE user_role AS ENUM ('user', 'admin');
+
+CREATE TABLE IF NOT EXISTS public.user_roles (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    role user_role NOT NULL DEFAULT 'user',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS on user_roles
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for user_roles
+CREATE POLICY "Users can view their own role"
+    ON public.user_roles FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all roles"
+    ON public.user_roles FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.user_roles 
+            WHERE user_id = auth.uid() AND role = 'admin'
+        )
+    );
+
 -- Create the media storage bucket if it doesn't exist
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('media', 'media', true)
@@ -61,4 +89,4 @@ BEGIN
         WHERE user_roles.user_id = is_admin.user_id
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER; 
+$$ LANGUAGE plpgsql SECURITY DEFINER;
