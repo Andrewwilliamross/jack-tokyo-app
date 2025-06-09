@@ -1,4 +1,3 @@
-
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../supabase'
@@ -46,12 +45,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       console.log('Attempting to create admin account with email:', ADMIN_EMAIL)
       
-      // First check if user already exists
-      const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers()
-      if (!listError && existingUsers?.users?.some(user => user.email === ADMIN_EMAIL)) {
-        throw new Error('User already registered')
-      }
-
       const { data, error } = await supabase.auth.signUp({
         email: ADMIN_EMAIL,
         password,
@@ -62,6 +55,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (error) {
         console.error('Sign up error:', error)
+        // Handle user already exists error specifically
+        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+          throw new Error('User already registered')
+        }
         throw error
       }
       
