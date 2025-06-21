@@ -4,7 +4,7 @@
 import { supabase } from '../supabase/config/client';
 import type { Database } from '../supabase/types/database.types';
 
-type Entry = Database['public']['Tables']['entries']['Row'];
+export type Entry = Database['public']['Tables']['entries']['Row'];
 
 /**
  * Fetch all entries for the current user.

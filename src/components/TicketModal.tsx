@@ -12,6 +12,7 @@ import { uploadMedia } from '@/supabase/utils/media';
 import { supabase } from '@/supabase/config/client';
 import { useAuthStore } from '@/lib/store/auth';
 import { useNavigate } from 'react-router-dom';
+import type { Entry } from '../services/entryService';
 
 interface TicketModalProps {
   isOpen: boolean;
@@ -196,16 +197,11 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, editi
           status: 'draft',
         }, user.id);
       } else {
-        // Create entry in Supabase
-        console.log('User object (create):', user);
-        console.log('Payload to Supabase (create):', {
-          title: title || 'Untitled Entry',
-          description,
-          research_notes: researchNotes,
-          location_id: null,
-          status: 'draft',
-          created_by: user.id,
-        });
+        // Log the JWT access token and user object for debugging
+        const session = await supabase.auth.getSession();
+        console.log("JWT Access Token:", session.data.session?.access_token);
+        console.log("User object:", user);
+        // Restore to use actual form data
         entry = await createEntry({
           title: title || 'Untitled Entry',
           description,
